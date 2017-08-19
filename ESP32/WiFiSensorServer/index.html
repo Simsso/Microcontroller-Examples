@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ESP32 Sensor</title>
+	<style type="text/css">
+		.box {
+			width: 100px;
+			height: 100px;
+			margin: 0 auto;
+			padding: 2.5px;
+			position: relative;
+			box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
+		}
+		.point {
+			width: 5px;
+			height: 5px;
+			margin-left: -2.5px;
+			margin-top: -2.5px;
+			background: red;
+			border-radius: 50%;
+			position: relative;
+		}
+	</style>
+</head>
+<body>
+	<main>
+		<div class="box">
+			<div class="point"></div>
+		</div>
+		<div class="time"></div>
+	</main>
+<script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+	<script type="text/javascript">
+		(function(jQuery) {
+			let box = jQuery('.box'), time = jQuery('.time'), point = jQuery('.point');
+			function updatePoint() {
+				jQuery.ajax({
+					url: 'http://192.168.0.103/sensor',
+					type: 'GET',
+					success: (res) => {
+						point.css({ 'left': res.x * box.width(), 'top': res.y * box.height() });
+						time.html(res.time);
+						setTimeout(updatePoint, 10);
+					},
+					error: () => {
+						setTimeout(updatePoint, 1000);
+					}
+				})
+			}
+
+			updatePoint();
+		})(jQuery);
+	</script>
+</body>
+</html>
