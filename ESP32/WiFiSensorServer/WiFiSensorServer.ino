@@ -10,7 +10,6 @@ String host;
 void setup()
 {
     Serial.begin(115200);
-    pinMode(5, OUTPUT);
 
     Serial.println("Connecting to" + String(ssid));
     WiFi.begin(ssid, password);
