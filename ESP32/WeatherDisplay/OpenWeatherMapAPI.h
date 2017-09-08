@@ -2,7 +2,7 @@
 #define OpenWeatherMapAPI_h
 
 #include <ArduinoJson.h>
-#include "OLEDScreen.cpp"
+#include "OLEDScreen.h"
 
 class OpenWeatherMapAPI
 {

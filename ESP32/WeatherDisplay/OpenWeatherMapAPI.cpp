@@ -10,6 +10,8 @@ const char *owmApiHost = "api.openweathermap.org";
 const uint64_t timeout = 5000; // [ms]
 
 
+DynamicJsonBuffer jsonBuffer(20000); // response body size is usually around 15 kByte
+
 void OpenWeatherMapAPI::init(const char* ssid, const char* password)
 {
   Serial.println("Connecting to " + String(ssid));
@@ -21,27 +23,23 @@ void OpenWeatherMapAPI::init(const char* ssid, const char* password)
 
 bool OpenWeatherMapAPI::getForecast(String query, String appId, WeatherForecastSample** forecast, int* count)
 {
-	JsonObject* root = OpenWeatherMapAPI::getData(query, appId);
-	if (root == nullptr) {
-    Serial.println("Could not get the data");
-		return false;
-	}
-	else {
-		*count = 20;
-		*forecast = new WeatherForecastSample[*count];
-		for (int i = 0; i < *count; i++) {
-			(*forecast)[i].dt = (*root)["list"][i]["dt"].as<unsigned long>();
-			(*forecast)[i].temp = (*root)["list"][i]["main"]["temp"].as<float>();
-			(*forecast)[i].description = (*root)["list"][i]["weather"][0]["description"].as<String>();
-			(*forecast)[i].dtTxt = (*root)["list"][i]["dt_txt"].as<String>();
-			if ((*forecast)[i].dtTxt.length() == 0) {
-				*count = i;
-				break;
-			}
+	const JsonObject* root = OpenWeatherMapAPI::getData(query, appId);
+  if (root == nullptr) return false;
+  
+	*count = 20;
+	*forecast = new WeatherForecastSample[*count];
+	for (int i = 0; i < *count; i++) {
+		(*forecast)[i].dt = (*root)["list"][i]["dt"].as<unsigned long>();
+		(*forecast)[i].temp = (*root)["list"][i]["main"]["temp"].as<float>();
+		(*forecast)[i].description = (*root)["list"][i]["weather"][0]["description"].as<String>();
+		(*forecast)[i].dtTxt = (*root)["list"][i]["dt_txt"].as<String>();
+		if ((*forecast)[i].dtTxt.length() == 0) {
+			*count = i;
+			break;
 		}
-    Serial.println("Forecast data parsed");
-		return true;
 	}
+  Serial.println("Forecast data parsed");
+	return true;
 };
 
 String OpenWeatherMapAPI::getResponse(String query, String appId)
@@ -90,18 +88,17 @@ String OpenWeatherMapAPI::getResponse(String query, String appId)
 
 	client.stop();
 
-	Serial.println("Data received successfully (request body size: " + String(resBody.length()) + " bytes)");
+	Serial.print("Data received successfully (request body size: " + String(resBody.length()) + " bytes)");
   Serial.println(resBody);
 	return resBody;
 };
 
 JsonObject* OpenWeatherMapAPI::getData(String query, String appId)
 {
-	String resBody = OpenWeatherMapAPI::getResponse(query, appId);
+  String resBody = OpenWeatherMapAPI::getResponse(query, appId);
 	const int contentLength = resBody.length();
 	if (contentLength > 0) {
 		// parse JSON
-		DynamicJsonBuffer jsonBuffer(contentLength);
 		JsonObject& root = jsonBuffer.parseObject(resBody);
 		if (!root.success()) {
 			return nullptr;

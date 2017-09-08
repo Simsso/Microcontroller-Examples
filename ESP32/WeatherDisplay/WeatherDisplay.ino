@@ -1,15 +1,22 @@
 /*
     Downloads the five day weather forecast from openweathermap.org and
     shows it on an OLED display.
-    The code is still under development and not fully functional yet.
+
+    Enter your SSID, password, location query, and OpenWeatherMap API key.
 */
 
 #include "OpenWeatherMapAPI.h"
 #include "WeatherForecastSample.cpp"
 #include "OLEDScreen.h"
 
-const char *ssid = "SSID";
-const char *password = "Password";
+const char *ssid = "WIFI_SSID";
+const char *password = "WIFI_PASSWORD";
+
+const String query = "Karlsruhe,de"; // location,country
+const String apiKey = "API_KEY";
+
+const uint64_t updateInterval = 1000 * 3600 * 2; // 2 hours
+uint64_t lastUpdate = 0;
 
 void setup()
 {
@@ -17,18 +24,30 @@ void setup()
 
   OpenWeatherMapAPI::init(ssid, password);
   OLEDScreen::init();
-  update();
 }
 
 void loop() {
-
-}
-
-void update() {
-  int count = 0;
   WeatherForecastSample* data;
-  OpenWeatherMapAPI::getForecast("Karlsruhe,de", "API_KEY", &data, &count);
-  delay(500);
-  OLEDScreen::printForecast(data, count);
+  int count = 0;
+  bool status = OpenWeatherMapAPI::getForecast(query, apiKey, &data, &count);
+  if (!status) {
+    Serial.println("An error occured");
+    while (true) {}
+  }
+  
+  lastUpdate = millis();
+
+  while (true) {
+    // time to update forecast data
+    if (lastUpdate + updateInterval < millis()) {
+      OpenWeatherMapAPI::getForecast(query, apiKey, &data, &count);
+      lastUpdate = millis();
+    }
+
+    for (int i = 0; i < count; i++) {
+      OLEDScreen::printForecast(data[i]);
+      delay(5000);
+    }
+  }
 }
 
